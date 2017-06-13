@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	cgiutil "github.com/hnakamur/sakura-rs-cgiutil"
@@ -17,7 +18,7 @@ import (
 )
 
 func handleGetList(w http.ResponseWriter, r *http.Request) {
-	ltsvlog.Logger.Info().String("handler", "handleGetList").Log()
+	ltsvlog.Logger.Info().String("handler", "handleGetList").String("reqID", webapputil.RequestID(r)).Log()
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintln(w, "handleGetList -------- Standard Library ---------")
@@ -30,7 +31,7 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetRoot(w http.ResponseWriter, r *http.Request) {
-	ltsvlog.Logger.Info().String("handler", "handleGetRoot").Log()
+	ltsvlog.Logger.Info().String("handler", "handleGetRoot").String("reqID", webapputil.RequestID(r)).Log()
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Fprintln(w, "handleGetRoot -------- Standard Library ---------")
 	fmt.Fprintln(w, "Method:", r.Method)
@@ -62,7 +63,11 @@ func main() {
 	accessLogger := ltsvlog.NewLTSVLogger(accessLogFile, false, ltsvlog.SetLevelLabel(""))
 
 	generateRequestID := func(req *http.Request) string {
-		return fmt.Sprintf("%d_%d", time.Now().UnixNano(), os.Getpid())
+		buf := make([]byte, 0, 64)
+		buf = strconv.AppendInt(buf, time.Now().UnixNano(), 36)
+		buf = append(buf, '_')
+		buf = strconv.AppendInt(buf, int64(os.Getpid()), 36)
+		return string(buf)
 	}
 
 	writeAccessLog := func(res webapputil.ResponseLogInfo, req *http.Request) {
